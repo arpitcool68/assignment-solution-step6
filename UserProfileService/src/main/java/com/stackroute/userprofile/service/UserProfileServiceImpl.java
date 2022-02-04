@@ -1,63 +1,77 @@
 package com.stackroute.userprofile.service;
 
+import java.util.Optional;
+
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.stackroute.userprofile.model.UserProfile;
+import com.stackroute.userprofile.repository.UserProfileRepository;
 import com.stackroute.userprofile.util.exception.UserProfileAlreadyExistsException;
 import com.stackroute.userprofile.util.exception.UserProfileNotFoundException;
 
-/*
-* Service classes are used here to implement additional business logic/validation 
-* This class has to be annotated with @Service annotation.
-* @Service - It is a specialization of the component annotation. It doesn't currently 
-* provide any additional behavior over the @Component annotation, but it's a good idea 
-* to use @Service over @Component in service-layer classes because it specifies intent 
-* better. Additionally, tool support and additional behavior might rely on it in the 
-* future.
-* */
-
+@Service
+@Transactional
 public class UserProfileServiceImpl implements UserProfileService {
 
-	/*
-	 * Autowiring should be implemented for the UserProfileRepository. (Use
-	 * Constructor-based autowiring) Please note that we should not create any
-	 * object using the new keyword.
-	 */
-
-	/*
-	 * This method should be used to save a new userprofile.Call the corresponding method
-	 * of Respository interface.
-	 */
+	@Autowired
+	private UserProfileRepository userProfileRepository;
 
     public UserProfile registerUser(UserProfile user) throws UserProfileAlreadyExistsException {
-        return null;
+    	UserProfile userProfile = userProfileRepository.insert(user);
+    	if(null != userProfile) {
+    		return userProfile;
+    	}else {
+    		throw new UserProfileAlreadyExistsException("Profile not found");
+    	}
+    	
     }
 
-	/*
-	 * This method should be used to update a existing userprofile.Call the corresponding
-	 * method of Respository interface.
-	 */
-
+	 
     @Override
     public UserProfile updateUser(String userId, UserProfile user) throws UserProfileNotFoundException {
-    	return null;
-    }
+    	try {
+    		Optional<UserProfile> optionalNews = userProfileRepository.findById(userId);
+        	if(optionalNews.isPresent()) {
+        		BeanUtils.copyProperties(user, optionalNews.get());
+        		userProfileRepository.insert(optionalNews.get());
+        		return optionalNews.get();
+        	}else {
+        		throw new UserProfileNotFoundException("Profile not found");
+    		}
+    	}catch (Exception e) {
+    		throw new UserProfileNotFoundException("Profile not found");
+		}
+    	
 
-	/*
-	 * This method should be used to delete an existing user. Call the corresponding
-	 * method of Respository interface.
-	 */
+		
+    }
 
     @Override
     public boolean deleteUser(String userId) throws UserProfileNotFoundException {
-        return false;
+    	boolean isDeleted = false;
+    	Optional<UserProfile> fetchedUserProfileObj = userProfileRepository.findById(userId);
+		if(null != fetchedUserProfileObj) {
+			userProfileRepository.deleteById(userId);
+			isDeleted = true;
+		}else {
+			isDeleted=false;
+			throw new UserProfileNotFoundException("Profile not exist");
+		}
+		return isDeleted;
     }
     
-	/*
-	 * This method should be used to get userprofile by userId.Call the corresponding
-	 * method of Respository interface.
-	 */
+
 
     @Override
     public UserProfile getUserById(String userId) throws UserProfileNotFoundException {
-    	return null;
+    	Optional<UserProfile> optionalReminder = userProfileRepository.findById(userId);
+		if (!optionalReminder.isPresent()) {
+			throw new UserProfileNotFoundException("not exist");
+		}
+
+		return optionalReminder.get();
     }
 }

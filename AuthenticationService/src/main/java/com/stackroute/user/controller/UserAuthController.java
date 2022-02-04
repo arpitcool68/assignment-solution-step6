@@ -1,54 +1,98 @@
 package com.stackroute.user.controller;
 
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.servlet.ServletException;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.stackroute.user.model.User;
 import com.stackroute.user.service.UserAuthService;
+import com.stackroute.user.util.exception.UserAlreadyExistsException;
 
-/*
- * As in this assignment, we are working on creating RESTful web service, hence annotate
- * the class with @RestController annotation. A class annotated with the @Controller annotation
- * has handler methods which return a view. However, if we use @ResponseBody annotation along
- * with @Controller annotation, it will return the data directly in a serialized 
- * format. Starting from Spring 4 and above, we can use @RestController annotation which 
- * is equivalent to using @Controller and @ResposeBody annotation
- */
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;	
 
+@RestController
+@RequestMapping("/api/v1/auth")
 public class UserAuthController {
 
-    /*
-	 * Autowiring should be implemented for the UserAuthService. (Use Constructor-based
-	 * autowiring) Please note that we should not create an object using the new
-	 * keyword
-	 */
+	@Autowired
+	private UserAuthService userAuthService;
 
-    public UserAuthController(UserAuthService userAuthService) {
+	private static final int EXPIRY_DAYS = 300000;
+
+	private Map<String, String> returnMap = new HashMap<>();
+
+	@PostMapping("/register")
+	public ResponseEntity<String> register(@RequestBody User user) {
+		try {
+			userAuthService.saveUser(user);
+			return new ResponseEntity<>("User Created Successfully", HttpStatus.CREATED);
+		} catch (UserAlreadyExistsException e) {
+			return new ResponseEntity<>(HttpStatus.CONFLICT);
+		}
 	}
 
-    /*
-	 * Define a handler method which will create a specific user by reading the
-	 * Serialized object from request body and save the user details in the
-	 * database. This handler method should return any one of the status messages
-	 * basis on different situations:
-	 * 1. 201(CREATED) - If the user created successfully. 
-	 * 2. 409(CONFLICT) - If the userId conflicts with any existing user, 
-	 * UserAlreadyExistsException is caught.
+	@PostMapping("/login")
+	public ResponseEntity<?> login(@RequestBody User user) throws ServletException {
+
+		String jwtToken = "";
+		if (null != user && !StringUtils.isEmpty(user.getUserId()) && !StringUtils.isEmpty(user.getPassword())) {
+			try {
+				User fetchedUser = userAuthService.findByUserIdAndPassword(user.getUserId(), user.getPassword());
+				String userId = fetchedUser.getUserId();
+				String password = fetchedUser.getPassword();
+				if (!StringUtils.isEmpty(userId) && !StringUtils.isEmpty(password)) {
+					jwtToken = getToken(userId, password);
+					returnMap.clear();
+					returnMap.put("accessToken", jwtToken);
+					returnMap.put("message", "user successfully logged in");
+				} else {
+					returnResp("Validation of user name and password fails please try again !!");
+				}
+			} catch (Exception e) {
+				String exceptionMessage = e.getMessage();
+				returnResp(exceptionMessage);
+			}
+		} else {
+			returnResp("Validation of user name and password fails please try again !!");
+		}
+		return new ResponseEntity<>(returnMap, HttpStatus.OK);
+	}
+
+	/**
+	 * Return the Response if UnAUthorized
 	 * 
-	 * This handler method should map to the URL "/api/v1/auth/register" using HTTP POST method
+	 * @param exceptionMessage
+	 * @return
 	 */
+	private ResponseEntity<?> returnResp(String exceptionMessage) {
+		returnMap.clear();
+		returnMap.put("accessToken", null);
+		returnMap.put("message", exceptionMessage);
+		return new ResponseEntity<>(returnMap, HttpStatus.UNAUTHORIZED);
 
+	}
 
-	/* 
-	 * Define a handler method which will authenticate a user by reading the Serialized user
-	 * object from request body containing the username and password. The username and password should be validated 
-	 * before proceeding ahead with JWT token generation. The user credentials will be validated against the database entries. 
-	 * The error should be return if validation is not successful. If credentials are validated successfully, then JWT
-	 * token will be generated. The token should be returned back to the caller along with the API response.
-	 * This handler method should return any one of the status messages basis on different
-	 * situations:
-	 * 1. 200(OK) - If login is successful
-	 * 2. 401(UNAUTHORIZED) - If login is not successful
-	 * 
-	 * This handler method should map to the URL "/api/v1/auth/login" using HTTP POST method
-	*/
-    
+	private String getToken(String userName, String password) throws ServletException {
+		if (userName == null || password == null) {
+			throw new ServletException("Please fill in the user Name and Password");
+		}
+
+		return Jwts.builder().setSubject(userName).setIssuedAt(new Date())
+				.setExpiration(new Date(System.currentTimeMillis() + EXPIRY_DAYS))
+				.signWith(SignatureAlgorithm.HS256, "secretKey".getBytes()).compact();
+	}
 
 
 }

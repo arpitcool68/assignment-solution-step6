@@ -1,3 +1,14 @@
+#spring:
+#  application:
+#    name: userProfileService
+#  data:
+#   mongodb:
+#     database: news
+#     port: 27017
+#     host: mongo
+#server:
+# port: 8084
+
 spring:
  data:
    mongodb:
@@ -7,4 +18,16 @@ spring:
      port: ${MONGO_PORT}
      host: ${MONGO_HOST}
 server:
- port: 8084
+ port: 8081
+ 
+logging:
+  level:
+    org:
+      mongodb:
+        driver: ERROR
+eureka:
+  client:
+    service-url:
+      default-zone: http://localhost:8761/eureka
+    registerWithEureka: true
+    fetchRegistry: true

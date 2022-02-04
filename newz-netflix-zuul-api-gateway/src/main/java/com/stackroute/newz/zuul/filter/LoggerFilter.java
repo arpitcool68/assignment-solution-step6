@@ -1,17 +1,45 @@
 package com.stackroute.newz.zuul.filter;
 
+import javax.servlet.http.HttpServletRequest;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import com.netflix.zuul.ZuulFilter;
+import com.netflix.zuul.context.RequestContext;
+import com.netflix.zuul.http.HttpServletRequestWrapper;
+
 /*
  * Implement zuul logging filter by extending zuul filter
  */
 @Component
-public class LoggerFilter{
+public class LoggerFilter extends ZuulFilter {
 
-	private Logger logger = LoggerFactory.getLogger(this.getClass());
+	private static Logger log = LoggerFactory.getLogger(LoggerFilter.class);
 
-	
+	@Override
+	public String filterType() {
+		return "pre";
+	}
+
+	@Override
+	public int filterOrder() {
+		return 2;
+	}
+
+	@Override
+	public boolean shouldFilter() {
+		return true;
+	}
+
+	@Override
+	public Object run() {
+		RequestContext ctx = RequestContext.getCurrentContext();
+		HttpServletRequest request = new HttpServletRequestWrapper(ctx.getRequest());
+
+		log.info(String.format("%s request to %s", request.getMethod(), request.getRequestURL().toString()));
+
+		return null;
+	}
 }

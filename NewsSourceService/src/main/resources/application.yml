@@ -1,3 +1,14 @@
+#spring:
+#  application:
+#    name: newsSourceService
+#  data:
+#   mongodb:
+#     database: news
+#     port: 27017
+#     host: localhost
+#server:
+# port: 8083
+
 spring:
  data:
    mongodb:
@@ -8,3 +19,18 @@ spring:
      host: ${MONGO_HOST}
 server:
  port: 8083
+ 
+logging:
+  level:
+    org:
+      mongodb:
+        driver: ERROR
+eureka:
+  client:
+    service-url:
+      default-zone: http://localhost:8761/eureka
+    registerWithEureka: true
+    fetchRegistry: true
+
+ 
+  

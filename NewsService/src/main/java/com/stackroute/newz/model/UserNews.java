@@ -2,34 +2,45 @@ package com.stackroute.newz.model;
 
 import java.util.List;
 
-/*
- * Please note that this class is annotated with @Document annotation
- * @Document identifies a domain object to be persisted to MongoDB.
- * 
- */
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
+@Document(collection = "user.news")
 public class UserNews {
 
-	/*
-	 * This class should have two fields (userId, newslist).Out of these two fields,
-	 * the field userId should be annotated with @Id. This class should also contain
-	 * the getters and setters for the fields.
-	 */
+	@Id
+	private String userId;
+	private List<News> newsList;
+
+	public UserNews(String userId, List<News> newsList) {
+		super();
+		this.userId = userId;
+		this.newsList = newsList;
+	}
 
 	public String getUserId() {
-		return null;
+		return userId;
 	}
 
 	public void setUserId(String userId) {
-		
+		this.userId = userId;
 	}
 
 	public List<News> getNewslist() {
-		return null;
+		return newsList;
 	}
 
-	public void setNewslist(List<News> newslist) {
-		
+	public void setNewslist(List<News> newsList) {
+		this.newsList = newsList;
+	}
+
+	public UserNews() {
+		super();
+	}
+
+	@Override
+	public String toString() {
+		return "UserNews [userId=" + userId + ", newsList=" + newsList + "]";
 	}
 
 }

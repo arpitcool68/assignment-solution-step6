@@ -1,0 +1,117 @@
+# Dockerfile has been added in all micro-services, you need to dockerize all micro-services and add docker-compose.yml file
+version: "3.9"
+
+services:
+  mysqlDB:
+    image: "mysql:5"
+    container_name: "mysql_5"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+    ports:
+      - "3307:3306"
+    volumes:
+      - data-volume:/var/lib/mysql
+    networks:
+      stackRoute:
+      
+  mongo:
+    image: mongo:latest
+    container_name: "mongo_latest_1"
+    ports:
+       - "27018:27017"
+    volumes:
+      - data-volume:/var/lib/mysql
+    networks:
+      stackRoute:
+      
+  auth-service:
+    image: auth-service
+    container_name: "auth-service"
+    ports:
+      - "8082:8082"
+    depends_on:
+      - mysqlDB
+      - eureka-server
+    links:
+      - eureka-server:eureka-server
+    environment:
+      eureka.client.serviceUrl.defaultZone: http://eureka-server:8761/eureka
+    networks:
+      stackRoute:
+      
+  news-service:
+    image: news-service
+    container_name: "news-service"
+    ports:
+     - "8081:8081"
+    depends_on:
+      - mongo
+      - eureka-server
+    links:
+      - eureka-server:eureka-server
+    environment:
+      eureka.client.serviceUrl.defaultZone: http://eureka-server:8761/eureka
+    networks:
+      stackRoute:
+      
+  news-source-service:
+    image: news-source-service
+    container_name: "newsource-service"
+    ports:
+      - "8083:8083"
+    depends_on:
+      - mongo
+      - eureka-server
+    links:
+      - eureka-server:eureka-server
+    environment:
+      eureka.client.serviceUrl.defaultZone: http://eureka-server:8761/eureka
+    networks:
+      stackRoute:
+      
+  user-profile-service:
+    image: user-profile-service
+    container_name: "userprofile-service"
+    ports:
+      - "8084:8084"
+    depends_on:
+      - mongo
+      - eureka-server
+    links:
+      - eureka-server:eureka-server
+    environment:
+      eureka.client.serviceUrl.defaultZone: http://eureka-server:8761/eureka
+    networks:
+      stackRoute:
+      
+  eureka-server:
+    image: eureka-server
+    container_name: "eureka-server"
+    ports:
+      - "8761:8761"
+    networks:
+      stackRoute:
+      
+  api-gateway:
+    image: api-gateway
+    container_name: "api-gateway"
+    ports:
+      - "8765:8765"
+    depends_on:
+      - eureka-server
+      - auth-service
+      - news-service
+      - news-source-service
+      - user-profile-service
+      
+    links:
+      - eureka-server:eureka-server
+    environment:
+      eureka.client.serviceUrl.defaultZone: http://eureka-server:8761/eureka
+    networks:
+      stackRoute:
+      
+networks:
+  stackRoute:
+volumes:
+  data-volume:
